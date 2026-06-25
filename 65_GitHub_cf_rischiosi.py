@@ -7,14 +7,12 @@ from urllib.parse import quote_plus
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.exc import ProgrammingError, OperationalError
-from dotenv import load_dotenv
 
-
-# ============================================================
-# CARICAMENTO VARIABILI AMBIENTE
-# ============================================================
-
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 
 # ============================================================
@@ -25,9 +23,6 @@ DATA_INIZIO = os.getenv("DATA_INIZIO", "2025-10-01 00:00:00")
 DATA_FINE = os.getenv("DATA_FINE", "2026-07-03 00:00:00")
 
 # None = prende tutti gli stati ticket
-# Esempio nel .env:
-# STATO_TICKET=Venduto
-# oppure lasciare vuoto per prendere tutti gli stati
 STATO_TICKET = os.getenv("STATO_TICKET", "").strip()
 if STATO_TICKET == "":
     STATO_TICKET = None
@@ -53,18 +48,25 @@ OUTPUT_FILE = OUTPUT_DIR / os.getenv(
 
 
 # ============================================================
-# CONFIGURAZIONE DATABASE DA VARIABILI AMBIENTE
+# CONFIGURAZIONE DATABASE DA GITHUB SECRETS / .ENV
 # ============================================================
 
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT", "3306")
 
-if not DB_USER or not DB_PASSWORD or not DB_HOST:
-    raise ValueError(
-        "Configurazione database mancante. "
-        "Controlla le variabili DB_USER, DB_PASSWORD e DB_HOST nel file .env."
-    )
+if not DB_USER:
+    raise ValueError("Variabile DB_USER mancante.")
+
+if not DB_PASSWORD:
+    raise ValueError("Variabile DB_PASSWORD mancante.")
+
+if not DB_HOST:
+    raise ValueError("Variabile DB_HOST mancante.")
+
+if not DB_PORT:
+    raise ValueError("Variabile DB_PORT mancante.")
 
 
 DB_CONFIGS = {
@@ -72,73 +74,85 @@ DB_CONFIGS = {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_360BET", "AnalisiTickets_360BET"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_360BET",
     },
     "ADMIRAL": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_ADMIRAL", "AnalisiTickets_ADMIRAL"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_ADMIRAL",
     },
     "BBET": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_BBET", "AnalisiTickets_BBET"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_BBET",
     },
     "DOMUSBET": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_DOMUSBET", "AnalisiTickets_DOMUSBET"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_DOMUSBET",
     },
     "MARATHON": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_MARATHON", "AnalisiTickets_MARATHON"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_MARATHON",
     },
     "SKYWIND": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_SKYWIND", "AnalisiTickets_SKYWIND"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_SKYWIND",
     },
     "SPORTBET": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_SPORTBET", "AnalisiTickets_SPORTBET"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_SPORTBET",
     },
     "STANLEYBET": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_STANLEYBET", "AnalisiTickets_STANLEYBET"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_STANLEYBET",
     },
     "STARCASINO": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_STARCASINO", "AnalisiTickets_STARCASINO"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_STARCASINO",
     },
     "TOTOSI": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_TOTOSI", "AnalisiTickets_TOTOSI"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_TOTOSI",
     },
     "VINCITU": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_VINCITU", "AnalisiTickets_VINCITU"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_VINCITU",
     },
     "WILLIAMHILL": {
         "user": DB_USER,
         "password": DB_PASSWORD,
         "host": DB_HOST,
-        "database": os.getenv("DB_WILLIAMHILL", "AnalisiTickets_WILLIAMHILL"),
+        "port": DB_PORT,
+        "database": "AnalisiTickets_WILLIAMHILL",
     },
 }
 
@@ -157,11 +171,12 @@ def crea_engine(cfg: dict):
     user = quote_plus(str(cfg["user"]))
     password = quote_plus(str(cfg["password"]))
     host = cfg["host"]
+    port = cfg["port"]
     database = cfg["database"]
 
     url = (
         f"mysql+mysqlconnector://{user}:{password}"
-        f"@{host}/{database}"
+        f"@{host}:{port}/{database}"
     )
 
     return create_engine(url)
@@ -276,8 +291,7 @@ def prepara_report_finale(df: pd.DataFrame) -> pd.DataFrame:
         errors="coerce",
     ).fillna(0)
 
-    # Conversione da centesimi a euro.
-    # La divisione per 100 viene fatta una sola volta.
+    # Conversione da centesimi a euro
     df["importo_giocato"] = (
         df["importo_giocato_cent"] / 100
     ).round(2)
@@ -286,7 +300,7 @@ def prepara_report_finale(df: pd.DataFrame) -> pd.DataFrame:
         df["importo_vincita_cent"] / 100
     ).round(2)
 
-    # Rapporto:
+    # Rapporto richiesto:
     # importo_vincita / importo_giocato * 100
     df["rapporto_vincita_giocato_percent"] = df.apply(
         lambda row: round(

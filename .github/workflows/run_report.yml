@@ -7,7 +7,10 @@ on:
     # GitHub Actions usa orario UTC.
     # 04:00 UTC = 06:00 Italia con ora legale
     # 10:00 UTC = 12:00 Italia con ora legale
-    - cron: "0 6,12 * * *"
+    - cron: "0 4,10 * * *"
+
+permissions:
+  contents: write
 
 jobs:
   run-report:
@@ -47,7 +50,26 @@ jobs:
         run: |
           python 65_GitHub_cf_rischiosi.py
 
-      - name: Carica CSV come artifact
+      - name: Verifica file generato
+        run: |
+          ls -la output
+          test -f output/report_cf_importi.csv
+
+      - name: Salva CSV nella repository
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add output/report_cf_importi.csv
+
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica al CSV da salvare."
+          else
+            git commit -m "Aggiornamento automatico report CF importi"
+            git push
+          fi
+
+      - name: Carica CSV anche come artifact
         uses: actions/upload-artifact@v4
         with:
           name: report-cf-importi

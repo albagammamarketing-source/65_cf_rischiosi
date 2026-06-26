@@ -3,6 +3,12 @@ name: Genera report CF importi
 on:
   workflow_dispatch:
 
+  schedule:
+    # GitHub Actions usa orario UTC.
+    # 04:00 UTC = 06:00 Italia con ora legale
+    # 10:00 UTC = 12:00 Italia con ora legale
+    - cron: "0 6,12 * * *"
+
 jobs:
   run-report:
     runs-on: ubuntu-latest

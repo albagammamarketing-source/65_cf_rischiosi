@@ -5,9 +5,9 @@ on:
 
   schedule:
     # GitHub Actions usa orario UTC.
-    # 04:00 UTC = 06:00 Italia con ora legale
-    # 10:00 UTC = 12:00 Italia con ora legale
-    - cron: "0 4,10 * * *"
+    # 06:00 UTC = 08:00 Italia con ora legale
+    # 12:00 UTC = 14:00 Italia con ora legale
+    - cron: "0 6,12 * * *"
 
 permissions:
   contents: write
@@ -60,7 +60,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add output/report_cf_importi.csv
+          git add -f output/report_cf_importi.csv
 
           if git diff --cached --quiet; then
             echo "Nessuna modifica al CSV da salvare."

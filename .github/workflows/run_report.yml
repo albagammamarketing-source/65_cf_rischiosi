@@ -5,9 +5,9 @@ on:
 
   schedule:
     # GitHub Actions usa orario UTC.
-    # 06:00 UTC = 08:00 Italia con ora legale
-    # 12:00 UTC = 14:00 Italia con ora legale
-    - cron: "0 6,12 * * *"
+    # 04:00 UTC = 08:00 Italia con ora legale
+    # 10:00 UTC = 14:00 Italia con ora legale
+    - cron: "0 4,10 * * *"
 
 permissions:
   contents: write

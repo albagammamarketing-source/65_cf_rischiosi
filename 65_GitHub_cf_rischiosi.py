@@ -20,7 +20,7 @@ except ImportError:
 # ============================================================
 
 DATA_INIZIO = os.getenv("DATA_INIZIO", "2025-10-01 00:00:00")
-DATA_FINE = os.getenv("DATA_FINE", "2026-07-03 00:00:00")
+DATA_FINE = os.getenv("DATA_FINE", "2026-09-03 00:00:00")
 
 # None = prende tutti gli stati ticket
 STATO_TICKET = os.getenv("STATO_TICKET", "").strip()
